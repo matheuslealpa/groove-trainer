@@ -1,0 +1,122 @@
+.root-pane {
+    -fx-background-color: #15171c;
+    -fx-font-family: "Inter", "Segoe UI", "Helvetica Neue", sans-serif;
+}
+
+.label {
+    -fx-text-fill: #e6e8ee;
+}
+
+.bpm-value {
+    -fx-font-size: 84px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffffff;
+}
+
+.bpm-unit {
+    -fx-font-size: 14px;
+    -fx-text-fill: #8a90a0;
+    -fx-font-weight: bold;
+}
+
+.tempo-name {
+    -fx-font-size: 15px;
+    -fx-text-fill: #f5a623;
+    -fx-font-style: italic;
+}
+
+.field-label {
+    -fx-font-size: 11px;
+    -fx-text-fill: #8a90a0;
+}
+
+.hint {
+    -fx-font-size: 11px;
+    -fx-text-fill: #6b7080;
+}
+
+.status {
+    -fx-text-fill: #ff6b6b;
+}
+
+.check-box {
+    -fx-text-fill: #e6e8ee;
+}
+
+.button {
+    -fx-background-color: #262a33;
+    -fx-text-fill: #e6e8ee;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #323744;
+}
+
+.step-button {
+    -fx-font-size: 14px;
+    -fx-min-width: 46px;
+    -fx-min-height: 38px;
+}
+
+.play-button {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-min-width: 170px;
+    -fx-min-height: 52px;
+    -fx-background-color: #2e7d5b;
+}
+
+.play-button:hover {
+    -fx-background-color: #379469;
+}
+
+.play-button.playing {
+    -fx-background-color: #b23b3b;
+}
+
+.play-button.playing:hover {
+    -fx-background-color: #c94545;
+}
+
+.tap-button {
+    -fx-font-size: 18px;
+    -fx-min-width: 100px;
+    -fx-min-height: 52px;
+}
+
+.beat-dot {
+    -fx-fill: #4fa3ff;
+}
+
+.beat-dot.accent {
+    -fx-fill: #f5a623;
+}
+
+.slider .track {
+    -fx-background-color: #2a2e38;
+}
+
+.slider .thumb {
+    -fx-background-color: #4fa3ff;
+}
+
+.combo-box {
+    -fx-background-color: #262a33;
+    -fx-background-radius: 8;
+}
+
+.combo-box .list-cell {
+    -fx-text-fill: #e6e8ee;
+    -fx-background-color: transparent;
+}
+
+.combo-box-popup .list-view .list-cell {
+    -fx-background-color: #262a33;
+    -fx-text-fill: #e6e8ee;
+}
+
+.combo-box-popup .list-view .list-cell:hover {
+    -fx-background-color: #323744;
+}
