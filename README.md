@@ -1,5 +1,12 @@
 # Groove Trainer
 
+[![CI](https://github.com/matheuslealpa/groove-trainer/actions/workflows/ci.yml/badge.svg)](https://github.com/matheuslealpa/groove-trainer/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/matheuslealpa/groove-trainer)](https://github.com/matheuslealpa/groove-trainer/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/matheuslealpa/groove-trainer/total)](https://github.com/matheuslealpa/groove-trainer/releases)
+![Java](https://img.shields.io/badge/Java-25-orange?logo=openjdk)
+![JavaFX](https://img.shields.io/badge/JavaFX-25-blue)
+![Platforms](https://img.shields.io/badge/platform-Linux%20%7C%20Windows-lightgrey)
+
 Metronome and timing trainer for drum practice, built with Java + JavaFX.
 
 ## Features (v1)
