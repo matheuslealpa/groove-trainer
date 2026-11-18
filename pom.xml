@@ -6,15 +6,23 @@
 
     <groupId>io.github.matheuslealpa</groupId>
     <artifactId>groove-trainer</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>${revision}</version>
     <name>Groove Trainer</name>
     <description>Metrônomo e treinador de tempo para estudo de bateria</description>
+    <url>https://github.com/matheuslealpa/groove-trainer</url>
 
     <properties>
+        <!-- Na release, o CI sobrescreve com a versão da tag: -Drevision=1.2.3 -->
+        <revision>0.1.0-SNAPSHOT</revision>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <javafx.version>25</javafx.version>
         <junit.version>5.11.4</junit.version>
+        <app.main.class>io.github.matheuslealpa.groovetrainer.Launcher</app.main.class>
+
+        <!-- Empacotamento (perfil "package"): app-image, deb, rpm, msi ou exe -->
+        <jpackage.type>app-image</jpackage.type>
+        <jpackage.dir>${project.build.directory}/jpackage</jpackage.dir>
     </properties>
 
     <dependencies>
@@ -33,6 +41,7 @@
     </dependencies>
 
     <build>
+        <finalName>groove-trainer</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -43,6 +52,21 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.2</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.2</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>${app.main.class}</mainClass>
+                        </manifest>
+                        <manifestEntries>
+                            <Implementation-Version>${project.version}</Implementation-Version>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.openjfx</groupId>
@@ -57,4 +81,216 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Classificador dos JARs nativos do JavaFX para o sistema atual -->
+        <profile>
+            <id>platform-linux</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <name>Linux</name>
+                </os>
+            </activation>
+            <properties>
+                <javafx.platform>linux</javafx.platform>
+                <jpackage.icon>${project.basedir}/src/main/packaging/groove-trainer.png</jpackage.icon>
+            </properties>
+        </profile>
+        <profile>
+            <id>platform-windows</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                </os>
+            </activation>
+            <properties>
+                <javafx.platform>win</javafx.platform>
+                <jpackage.icon>${project.basedir}/src/main/packaging/groove-trainer.ico</jpackage.icon>
+            </properties>
+        </profile>
+
+        <!--
+            Gera o app nativo com Java embutido:
+              mvn -Ppackage package                     (pasta executável em target/dist)
+              mvn -Ppackage package -Djpackage.type=deb (Linux)
+              mvn -Ppackage package -Djpackage.type=msi (Windows, precisa do WiX)
+        -->
+        <profile>
+            <id>package</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <configuration>
+                            <outputDirectory>${jpackage.dir}/app</outputDirectory>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <!-- JavaFX vai pro module path e é embutido no runtime pelo jlink -->
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>3.8.1</version>
+                        <executions>
+                            <execution>
+                                <id>copy-javafx-modules</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>copy-dependencies</goal>
+                                </goals>
+                                <configuration>
+                                    <includeGroupIds>org.openjfx</includeGroupIds>
+                                    <includeScope>runtime</includeScope>
+                                    <classifier>${javafx.platform}</classifier>
+                                    <outputDirectory>${jpackage.dir}/modules</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <!-- jpackage só aceita versão numérica (0.1.0, não 0.1.0-SNAPSHOT) -->
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>3.6.0</version>
+                        <executions>
+                            <execution>
+                                <id>parse-version</id>
+                                <goals>
+                                    <goal>parse-version</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.5.0</version>
+                        <executions>
+                            <execution>
+                                <id>jpackage</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>jpackage</executable>
+                                    <arguments combine.children="append">
+                                        <argument>--type</argument>
+                                        <argument>${jpackage.type}</argument>
+                                        <argument>--name</argument>
+                                        <argument>GrooveTrainer</argument>
+                                        <argument>--app-version</argument>
+                                        <argument>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}</argument>
+                                        <argument>--vendor</argument>
+                                        <argument>matheuslealpa</argument>
+                                        <argument>--description</argument>
+                                        <argument>${project.description}</argument>
+                                        <argument>--icon</argument>
+                                        <argument>${jpackage.icon}</argument>
+                                        <argument>--input</argument>
+                                        <argument>${jpackage.dir}/app</argument>
+                                        <argument>--main-jar</argument>
+                                        <argument>${project.build.finalName}.jar</argument>
+                                        <argument>--main-class</argument>
+                                        <argument>${app.main.class}</argument>
+                                        <argument>--module-path</argument>
+                                        <argument>${jpackage.dir}/modules</argument>
+                                        <argument>--add-modules</argument>
+                                        <argument>javafx.controls,java.desktop</argument>
+                                        <argument>--jlink-options</argument>
+                                        <argument>--compress=zip-6 --strip-debug --no-header-files --no-man-pages --strip-native-commands</argument>
+                                        <argument>--java-options</argument>
+                                        <argument>--enable-native-access=javafx.graphics</argument>
+                                        <argument>--dest</argument>
+                                        <argument>${project.build.directory}/dist</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Opções de instalador que só existem em cada sistema -->
+        <profile>
+            <id>installer-linux</id>
+            <activation>
+                <!-- Ativo quando o tipo é passado na linha de comando (deb, rpm, msi, exe) -->
+                <property>
+                    <name>jpackage.type</name>
+                </property>
+                <os>
+                    <name>Linux</name>
+                </os>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>jpackage</id>
+                                <configuration>
+                                    <arguments combine.children="append">
+                                        <argument>--about-url</argument>
+                                        <argument>${project.url}</argument>
+                                        <argument>--linux-package-name</argument>
+                                        <argument>groove-trainer</argument>
+                                        <argument>--linux-shortcut</argument>
+                                        <argument>--linux-menu-group</argument>
+                                        <argument>AudioVideo;Audio;Music</argument>
+                                        <argument>--linux-app-category</argument>
+                                        <argument>sound</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>installer-windows</id>
+            <activation>
+                <!-- Ativo quando o tipo é passado na linha de comando (deb, rpm, msi, exe) -->
+                <property>
+                    <name>jpackage.type</name>
+                </property>
+                <os>
+                    <family>windows</family>
+                </os>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>jpackage</id>
+                                <configuration>
+                                    <arguments combine.children="append">
+                                        <argument>--about-url</argument>
+                                        <argument>${project.url}</argument>
+                                        <argument>--win-menu</argument>
+                                        <argument>--win-menu-group</argument>
+                                        <argument>Groove Trainer</argument>
+                                        <argument>--win-shortcut</argument>
+                                        <argument>--win-dir-chooser</argument>
+                                        <argument>--win-per-user-install</argument>
+                                        <!-- Fixo para sempre: é o que faz a versão nova substituir a antiga -->
+                                        <argument>--win-upgrade-uuid</argument>
+                                        <argument>6b1f3c2e-8d4a-4f7e-9c35-2a7e5d9b41c8</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

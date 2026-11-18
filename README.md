@@ -20,19 +20,48 @@ Metrônomo e treinador de tempo para estudo de bateria, feito em Java + JavaFX.
 | ↑ / ↓        | ±1 BPM             |
 | Shift + ↑/↓  | ±5 BPM             |
 
-## Rodando
+## Instalação
+
+Baixe o instalador da [última release](https://github.com/matheuslealpa/groove-trainer/releases/latest).
+O Java já vem embutido, não precisa instalar nada além dele.
+
+| Sistema              | Arquivo  | Como instalar                                        |
+|----------------------|----------|------------------------------------------------------|
+| Ubuntu / Debian      | `.deb`   | `sudo apt install ./groove-trainer_*.deb`            |
+| Fedora / openSUSE    | `.rpm`   | `sudo dnf install ./groove-trainer-*.rpm`            |
+| Windows              | `.msi`   | Duplo clique (não pede administrador)                |
+
+Para atualizar, instale a versão nova por cima da antiga.
+
+## Desenvolvimento
 
 Requer JDK 25 e Maven.
 
 ```bash
-mvn javafx:run
+mvn javafx:run   # roda o app
+mvn test         # testes
 ```
 
-Testes:
+### Gerando o app nativo
 
 ```bash
-mvn test
+mvn -Ppackage package                       # pasta executável em target/dist/GrooveTrainer
+mvn -Ppackage package -Djpackage.type=deb   # .deb (precisa de fakeroot)
+mvn -Ppackage package -Djpackage.type=rpm   # .rpm (precisa de rpmbuild)
+mvn -Ppackage package -Djpackage.type=msi   # .msi (Windows, precisa do WiX)
 ```
+
+O `jpackage` só gera instalador para o sistema em que está rodando, por isso as releases
+são feitas pelo GitHub Actions.
+
+### Publicando uma versão
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+O workflow `release.yml` gera o `.deb`, o `.rpm` e o `.msi` e cria a Release com os três anexados.
 
 ## Como o tempo fica preciso
 

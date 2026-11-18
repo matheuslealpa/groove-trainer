@@ -1,0 +1,67 @@
+name: Release
+
+# Cria uma tag (ex.: git tag v0.2.0 && git push origin v0.2.0) e os instaladores
+# de Linux e Windows são gerados e anexados a uma Release no GitHub.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            type: deb
+          - os: ubuntu-latest
+            type: rpm
+          - os: windows-latest
+            type: msi
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Instalar rpmbuild
+        if: matrix.type == 'rpm'
+        run: sudo apt-get update && sudo apt-get install -y rpm
+
+      - name: Instalar WiX
+        if: matrix.type == 'msi'
+        run: |
+          dotnet tool install --global wix --version 5.0.2
+          wix extension add -g WixToolset.Util.wixext/5.0.2
+          wix extension add -g WixToolset.UI.wixext/5.0.2
+
+      - name: Gerar instalador
+        shell: bash
+        run: mvn -B -Ppackage package -Drevision="${GITHUB_REF_NAME#v}" -Djpackage.type=${{ matrix.type }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.type }}
+          path: target/dist/*.${{ matrix.type }}
+          if-no-files-found: error
+
+  release:
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
