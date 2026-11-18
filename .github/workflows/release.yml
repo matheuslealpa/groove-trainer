@@ -17,10 +17,17 @@ jobs:
         include:
           - os: ubuntu-latest
             type: deb
+            args: -Djpackage.type=deb
           - os: ubuntu-latest
             type: rpm
+            args: -Djpackage.type=rpm
           - os: windows-latest
             type: msi
+            args: -Djpackage.type=msi
+          # Usado pelo install.sh: o app pronto pra rodar, sem instalador
+          - os: ubuntu-latest
+            type: tar.gz
+            args: ''
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -44,7 +51,11 @@ jobs:
 
       - name: Gerar instalador
         shell: bash
-        run: mvn -B -Ppackage package -Drevision="${GITHUB_REF_NAME#v}" -Djpackage.type=${{ matrix.type }}
+        run: mvn -B -Ppackage package -Drevision="${GITHUB_REF_NAME#v}" ${{ matrix.args }}
+
+      - name: Compactar app
+        if: matrix.type == 'tar.gz'
+        run: tar -C target/dist -czf target/dist/groove-trainer-linux-x64.tar.gz GrooveTrainer
 
       - uses: actions/upload-artifact@v4
         with:

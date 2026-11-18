@@ -1,85 +1,89 @@
 # Groove Trainer
 
-Metrônomo e treinador de tempo para estudo de bateria, feito em Java + JavaFX.
+Metronome and timing trainer for drum practice, built with Java + JavaFX.
 
-## Recursos (v1)
+## Features (v1)
 
-- BPM de 30 a 300 (slider, botões ±1/±5 ou teclado)
-- Compassos 2/4, 3/4, 4/4, 5/4, 6/8, 7/8, 9/8 e 12/8
-- Acento no tempo 1 (opcional)
+- 30 to 300 BPM (slider, ±1/±5 buttons or keyboard)
+- 2/4, 3/4, 4/4, 5/4, 6/8, 7/8, 9/8 and 12/8 time signatures
+- Optional accent on beat 1
 - Tap tempo
-- Indicadores visuais sincronizados com o som
-- Controle de volume
+- Beat indicators in sync with the sound
+- Volume control
 
-### Atalhos
+### Shortcuts
 
-| Tecla        | Ação               |
+| Key          | Action             |
 |--------------|--------------------|
-| Espaço       | Tocar / parar      |
+| Space        | Play / stop        |
 | T            | Tap tempo          |
 | ↑ / ↓        | ±1 BPM             |
 | Shift + ↑/↓  | ±5 BPM             |
 
-## Instalação
+## Installation
 
-Baixe o instalador da [última release](https://github.com/matheuslealpa/groove-trainer/releases/latest).
-O Java já vem embutido, não precisa instalar nada além dele.
+Java is bundled, so there is nothing else to install.
 
-| Sistema              | Arquivo  | Como instalar                                        |
+### Linux (recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/matheuslealpa/groove-trainer/main/install.sh | bash
+```
+
+Installs into `~/.local` without sudo and adds a `groove-trainer` command and an applications
+menu entry. Run the same command again to update. To uninstall:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/matheuslealpa/groove-trainer/main/install.sh | bash -s -- --uninstall
+```
+
+### Installers
+
+Or download an installer from the [latest release](https://github.com/matheuslealpa/groove-trainer/releases/latest):
+
+| System               | File     | How to install                                       |
 |----------------------|----------|------------------------------------------------------|
 | Ubuntu / Debian      | `.deb`   | `sudo apt install ./groove-trainer_*.deb`            |
 | Fedora / openSUSE    | `.rpm`   | `sudo dnf install ./groove-trainer-*.rpm`            |
-| Windows              | `.msi`   | Duplo clique (não pede administrador)                |
+| Windows              | `.msi`   | Double-click it (no admin rights needed)             |
 
-Para atualizar, instale a versão nova por cima da antiga.
+To update, install the new version over the old one.
 
-## Desenvolvimento
+## Development
 
-Requer JDK 25 e Maven.
-
-```bash
-mvn javafx:run   # roda o app
-mvn test         # testes
-```
-
-### Gerando o app nativo
+Requires JDK 25 and Maven.
 
 ```bash
-mvn -Ppackage package                       # pasta executável em target/dist/GrooveTrainer
-mvn -Ppackage package -Djpackage.type=deb   # .deb (precisa de fakeroot)
-mvn -Ppackage package -Djpackage.type=rpm   # .rpm (precisa de rpmbuild)
-mvn -Ppackage package -Djpackage.type=msi   # .msi (Windows, precisa do WiX)
+mvn javafx:run   # run the app
+mvn test         # run the tests
 ```
 
-O `jpackage` só gera instalador para o sistema em que está rodando, por isso as releases
-são feitas pelo GitHub Actions.
-
-### Publicando uma versão
+### Building the native app
 
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+mvn -Ppackage package                       # runnable folder in target/dist/GrooveTrainer
+mvn -Ppackage package -Djpackage.type=deb   # .deb (needs fakeroot)
+mvn -Ppackage package -Djpackage.type=rpm   # .rpm (needs rpmbuild)
+mvn -Ppackage package -Djpackage.type=msi   # .msi (Windows, needs WiX)
 ```
 
-O workflow `release.yml` gera o `.deb`, o `.rpm` e o `.msi` e cria a Release com os três anexados.
+## How the timing stays accurate
 
-## Como o tempo fica preciso
+The metronome does **not** use `Thread.sleep()`, which drifts and jitters. `ClickRenderer`
+generates the audio sample by sample and places each click on the exact sample of its beat
+(at 44.1 kHz that is ~0.02 ms precision). `MetronomeEngine` streams that audio continuously
+to the sound card through a `SourceDataLine`.
 
-O metrônomo **não** usa `Thread.sleep()`, que atrasa de forma irregular. O `ClickRenderer`
-gera o áudio amostra por amostra e coloca cada clique na amostra exata do tempo
-(a 44,1 kHz, isso é precisão de ~0,02 ms). O `MetronomeEngine` manda esse fluxo contínuo
-para a placa de som por um `SourceDataLine`.
-
-A interface pisca os indicadores lendo a posição real de reprodução da placa
-(`getLongFramePosition()`), então a luz acende quando o clique sai na caixa de som, e não
-quando ele é gerado.
+The UI flashes the beat indicators by reading the sound card's actual playback position
+(`getLongFramePosition()`), so the light turns on when the click comes out of the speaker,
+not when it is generated.
 
 ```
 src/main/java/io/github/matheuslealpa/groovetrainer/
 ├── audio/
-│   ├── ClickRenderer.java    # gera o áudio e agenda os tempos (lógica pura, testável)
-│   ├── ClickSound.java       # sons de clique sintetizados
-│   ├── MetronomeEngine.java  # thread de áudio + SourceDataLine
+│   ├── ClickRenderer.java    # generates audio and schedules beats (pure logic, testable)
+│   ├── ClickSound.java       # synthesized click sounds
+│   ├── MetronomeEngine.java  # audio thread + SourceDataLine
 │   └── TapTempo.java
 └── ui/
     ├── MainView.java
@@ -87,11 +91,11 @@ src/main/java/io/github/matheuslealpa/groovetrainer/
     └── TempoName.java
 ```
 
-## Próximos passos
+## Roadmap
 
-- [ ] Subdivisões (colcheia, tercina, semicolcheia, sextina) com volume próprio
-- [ ] Speed trainer (sobe X BPM a cada N compassos)
-- [ ] Gap click (toca N compassos, silencia M)
+- [ ] Subdivisions (eighths, triplets, sixteenths, sextuplets) with their own volume
+- [ ] Speed trainer (raise X BPM every N bars)
+- [ ] Gap click (play N bars, mute M)
 - [ ] Swing / shuffle
-- [ ] Polirritmias
-- [ ] Rotinas de estudo e histórico de prática
+- [ ] Polyrhythms
+- [ ] Practice routines and history
