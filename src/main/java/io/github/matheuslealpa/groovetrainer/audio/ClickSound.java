@@ -1,11 +1,17 @@
 package io.github.matheuslealpa.groovetrainer.audio;
 
+import io.github.matheuslealpa.groovetrainer.rudiment.Stroke.Hand;
+
+import java.util.Random;
+
 /**
- * Sons de clique gerados por código: uma senoide curta com decaimento exponencial.
+ * Sons gerados por código: o clique é uma senoide curta com decaimento exponencial,
+ * e o toque do rudimento é um estalo de ruído sobre um corpo grave, lembrando uma caixa.
  */
 public final class ClickSound {
 
     private static final double DURATION_SECONDS = 0.035;
+    private static final double STROKE_SECONDS = 0.060;
 
     private ClickSound() {
     }
@@ -27,6 +33,21 @@ public final class ClickSound {
         for (int i = 0; i < length; i++) {
             double envelope = Math.exp(-decay * i);
             samples[i] = (float) (amplitude * envelope * Math.sin(2 * Math.PI * frequency * i / sampleRate));
+        }
+        return samples;
+    }
+
+    /** Toque do rudimento. A mão esquerda soa bem mais grave, para dar para distinguir de ouvido. */
+    public static float[] stroke(float sampleRate, Hand hand) {
+        double frequency = hand == Hand.R ? 260 : 150;
+        int length = (int) (sampleRate * STROKE_SECONDS);
+        float[] samples = new float[length];
+        Random noise = new Random(42); // semente fixa: o som é sempre o mesmo
+        for (int i = 0; i < length; i++) {
+            double t = (double) i / length;
+            double body = 0.55 * Math.exp(-6 * t) * Math.sin(2 * Math.PI * frequency * i / sampleRate);
+            double snap = 0.35 * Math.exp(-14 * t) * (noise.nextDouble() * 2 - 1);
+            samples[i] = (float) (body + snap);
         }
         return samples;
     }

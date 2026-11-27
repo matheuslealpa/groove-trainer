@@ -17,6 +17,28 @@ Metronome and timing trainer for drum practice, built with Java + JavaFX.
 - Tap tempo
 - Beat indicators in sync with the sound
 - Volume control
+- Drum rudiments played over the click, with a sticking strip (R/L) in sync with the sound
+
+### Rudiments
+
+| Family  | Rudiments                                                        |
+|---------|------------------------------------------------------------------|
+| Rolls   | Single stroke, double stroke, five stroke, nine stroke           |
+| Diddles | Single, double and triple paradiddle, paradiddle-diddle          |
+| Flams   | Flam, flam tap, flam accent                                      |
+| Drags   | Drag, single drag tap                                            |
+
+Each rudiment is one line in `Rudiments.java`, written on a grid of notes per beat:
+
+```java
+Rudiment.of("Flam accent", FLAM, 3, "f>R L R f>L R L")   // 3 = triplets
+```
+
+`R`/`L` is a stroke, `>` an accent, `f` a flam, `d` a drag and `-` a rest. Grace notes are
+played by the opposite hand.
+
+In stereo the click stays centered, right-hand strokes go to the right channel and left-hand
+strokes to the left (and the left hand is pitched lower), so the hands are easy to tell apart.
 
 ### Shortcuts
 
@@ -77,7 +99,7 @@ mvn -Ppackage package -Djpackage.type=msi   # .msi (Windows, needs WiX)
 ## How the timing stays accurate
 
 The metronome does **not** use `Thread.sleep()`, which drifts and jitters. `ClickRenderer`
-generates the audio sample by sample and places each click on the exact sample of its beat
+generates the audio sample by sample and places each click and rudiment stroke on its exact sample
 (at 44.1 kHz that is ~0.02 ms precision). `MetronomeEngine` streams that audio continuously
 to the sound card through a `SourceDataLine`.
 
@@ -92,14 +114,20 @@ src/main/java/io/github/matheuslealpa/groovetrainer/
 │   ├── ClickSound.java       # synthesized click sounds
 │   ├── MetronomeEngine.java  # audio thread + SourceDataLine
 │   └── TapTempo.java
+├── rudiment/
+│   ├── Rudiment.java         # a pattern of strokes + the short notation parser
+│   ├── Rudiments.java        # the catalog
+│   └── Stroke.java
 └── ui/
     ├── MainView.java
+    ├── RudimentStrip.java    # sticking strip (R/L) highlighted in sync with the sound
     ├── TimeSignature.java
     └── TempoName.java
 ```
 
 ## Roadmap
 
+- [ ] The rest of the 40 PAS rudiments, including buzz rolls
 - [ ] Subdivisions (eighths, triplets, sixteenths, sextuplets) with their own volume
 - [ ] Speed trainer (raise X BPM every N bars)
 - [ ] Gap click (play N bars, mute M)

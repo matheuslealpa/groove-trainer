@@ -1,5 +1,7 @@
 package io.github.matheuslealpa.groovetrainer.audio;
 
+import io.github.matheuslealpa.groovetrainer.rudiment.Rudiment;
+
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
@@ -22,13 +24,16 @@ public final class MetronomeEngine {
     /** ~46 ms de buffer: baixo o bastante pra resposta rápida, alto o bastante pra não engasgar. */
     private static final int LINE_BUFFER_FRAMES = 2048;
 
-    private final AudioFormat format = new AudioFormat(SAMPLE_RATE, 16, 1, true, false);
+    private final AudioFormat format = new AudioFormat(SAMPLE_RATE, 16, 2, true, false);
     private final Queue<ClickRenderer.Beat> pendingBeats = new ConcurrentLinkedQueue<>();
+    private final Queue<ClickRenderer.StrokeEvent> pendingStrokes = new ConcurrentLinkedQueue<>();
 
     private volatile double bpm = 100;
     private volatile int beatsPerBar = 4;
     private volatile boolean accentEnabled = true;
     private volatile float volume = 0.8f;
+    private volatile Rudiment rudiment;
+    private volatile float rudimentVolume = 0.8f;
 
     private volatile ClickRenderer renderer;
     private volatile SourceDataLine line;
@@ -45,8 +50,11 @@ public final class MetronomeEngine {
         ClickRenderer newRenderer = new ClickRenderer(SAMPLE_RATE, bpm, beatsPerBar);
         newRenderer.setAccentEnabled(accentEnabled);
         newRenderer.setVolume(volume);
+        newRenderer.setRudiment(rudiment);
+        newRenderer.setRudimentVolume(rudimentVolume);
 
         pendingBeats.clear();
+        pendingStrokes.clear();
         renderer = newRenderer;
         line = newLine;
         running = true;
@@ -76,6 +84,7 @@ public final class MetronomeEngine {
         line = null;
         renderer = null;
         pendingBeats.clear();
+        pendingStrokes.clear();
     }
 
     public boolean isRunning() {
@@ -83,14 +92,18 @@ public final class MetronomeEngine {
     }
 
     private void audioLoop(SourceDataLine out, ClickRenderer clicks) {
-        float[] samples = new float[CHUNK_FRAMES];
-        byte[] bytes = new byte[CHUNK_FRAMES * 2];
+        float[] left = new float[CHUNK_FRAMES];
+        float[] right = new float[CHUNK_FRAMES];
+        byte[] bytes = new byte[CHUNK_FRAMES * 4]; // 16 bits, estéreo intercalado
         while (running) {
-            clicks.render(samples, CHUNK_FRAMES, pendingBeats::add);
+            clicks.renderStereo(left, right, CHUNK_FRAMES, pendingBeats::add, pendingStrokes::add);
             for (int i = 0; i < CHUNK_FRAMES; i++) {
-                short s = (short) (Math.clamp(samples[i], -1f, 1f) * Short.MAX_VALUE);
-                bytes[2 * i] = (byte) s;
-                bytes[2 * i + 1] = (byte) (s >> 8);
+                short l = (short) (left[i] * Short.MAX_VALUE);
+                short r = (short) (right[i] * Short.MAX_VALUE);
+                bytes[4 * i] = (byte) l;
+                bytes[4 * i + 1] = (byte) (l >> 8);
+                bytes[4 * i + 2] = (byte) r;
+                bytes[4 * i + 3] = (byte) (r >> 8);
             }
             out.write(bytes, 0, bytes.length); // bloqueia enquanto o buffer da placa está cheio
         }
@@ -109,6 +122,22 @@ public final class MetronomeEngine {
         while ((beat = pendingBeats.peek()) != null && beat.frame() <= played) {
             pendingBeats.poll();
             consumer.accept(beat);
+        }
+    }
+
+    /**
+     * Entrega os toques do rudimento que já saíram na caixa de som. Chame a cada frame da interface.
+     */
+    public void pollPlayedStrokes(Consumer<ClickRenderer.StrokeEvent> consumer) {
+        SourceDataLine current = line;
+        if (current == null) {
+            return;
+        }
+        long played = current.getLongFramePosition();
+        ClickRenderer.StrokeEvent stroke;
+        while ((stroke = pendingStrokes.peek()) != null && stroke.frame() <= played) {
+            pendingStrokes.poll();
+            consumer.accept(stroke);
         }
     }
 
@@ -149,6 +178,23 @@ public final class MetronomeEngine {
         ClickRenderer r = renderer;
         if (r != null) {
             r.setVolume(volume);
+        }
+    }
+
+    /** Rudimento tocado sobre o clique; {@code null} deixa só o metrônomo. */
+    public void setRudiment(Rudiment rudiment) {
+        this.rudiment = rudiment;
+        ClickRenderer r = renderer;
+        if (r != null) {
+            r.setRudiment(rudiment);
+        }
+    }
+
+    public void setRudimentVolume(float rudimentVolume) {
+        this.rudimentVolume = rudimentVolume;
+        ClickRenderer r = renderer;
+        if (r != null) {
+            r.setRudimentVolume(rudimentVolume);
         }
     }
 }

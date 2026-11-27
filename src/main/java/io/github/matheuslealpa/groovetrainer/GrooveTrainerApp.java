@@ -16,7 +16,7 @@ public class GrooveTrainerApp extends Application {
     @Override
     public void start(Stage stage) {
         MainView view = new MainView(engine);
-        Scene scene = new Scene(view.getRoot(), 620, 520);
+        Scene scene = new Scene(view.getRoot(), 620, 640);
         scene.getStylesheets().add(Objects.requireNonNull(
                 getClass().getResource("ui/style.css")).toExternalForm());
         view.installShortcuts(scene);
@@ -25,7 +25,7 @@ public class GrooveTrainerApp extends Application {
                 getClass().getResource("ui/icon.png")).toExternalForm()));
         stage.setTitle("Groove Trainer");
         stage.setMinWidth(560);
-        stage.setMinHeight(480);
+        stage.setMinHeight(600);
         stage.setScene(scene);
         stage.show();
     }

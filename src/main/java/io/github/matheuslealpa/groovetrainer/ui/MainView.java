@@ -3,6 +3,8 @@ package io.github.matheuslealpa.groovetrainer.ui;
 import io.github.matheuslealpa.groovetrainer.audio.ClickRenderer;
 import io.github.matheuslealpa.groovetrainer.audio.MetronomeEngine;
 import io.github.matheuslealpa.groovetrainer.audio.TapTempo;
+import io.github.matheuslealpa.groovetrainer.rudiment.Rudiment;
+import io.github.matheuslealpa.groovetrainer.rudiment.Rudiments;
 import javafx.animation.AnimationTimer;
 import javafx.animation.FadeTransition;
 import javafx.geometry.Insets;
@@ -27,11 +29,12 @@ import javax.sound.sampled.LineUnavailableException;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Tela principal: BPM, compasso, acento, volume, tap tempo e indicadores de tempo. */
+/** Tela principal: BPM, compasso, acento, volume, tap tempo, indicadores de tempo e rudimentos. */
 public final class MainView {
 
     static final int MIN_BPM = 30;
     static final int MAX_BPM = 300;
+    private static final String NO_RUDIMENT = "Nenhum";
 
     private final MetronomeEngine engine;
     private final TapTempo tapTempo = new TapTempo();
@@ -44,6 +47,7 @@ public final class MainView {
     private final Button playButton = new Button("▶  Tocar");
     private final HBox beatDots = new HBox(14);
     private final List<Circle> dots = new ArrayList<>();
+    private final RudimentStrip rudimentStrip = new RudimentStrip();
 
     private boolean updatingBpm;
 
@@ -138,6 +142,28 @@ public final class MainView {
                 accent);
         controls.setAlignment(Pos.CENTER);
 
+        // --- Rudimento ---
+        ComboBox<String> rudiment = new ComboBox<>();
+        rudiment.getItems().add(NO_RUDIMENT);
+        Rudiments.ALL.forEach(r -> rudiment.getItems().add(r.name()));
+        rudiment.setValue(NO_RUDIMENT);
+        rudiment.setFocusTraversable(false);
+        rudiment.valueProperty().addListener((obs, old, name) -> {
+            Rudiment chosen = Rudiments.byName(name).orElse(null);
+            engine.setRudiment(chosen);
+            rudimentStrip.show(chosen);
+        });
+
+        Slider rudimentVolume = new Slider(0, 1, 0.8);
+        rudimentVolume.setPrefWidth(120);
+        rudimentVolume.setFocusTraversable(false);
+        rudimentVolume.valueProperty().addListener((obs, old, v) -> engine.setRudimentVolume(v.floatValue()));
+
+        HBox rudimentControls = new HBox(18,
+                labeled("Rudimento", rudiment),
+                labeled("Volume do rudimento", rudimentVolume));
+        rudimentControls.setAlignment(Pos.CENTER);
+
         // --- Tocar / Tap ---
         playButton.getStyleClass().add("play-button");
         playButton.setFocusTraversable(false);
@@ -158,8 +184,8 @@ public final class MainView {
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
-        root.getChildren().addAll(bpmRow, tempoNameLabel, bpmSlider, beatDots, controls, actions,
-                statusLabel, spacer, hint);
+        root.getChildren().addAll(bpmRow, tempoNameLabel, bpmSlider, beatDots, controls,
+                rudimentControls, rudimentStrip.getNode(), actions, statusLabel, spacer, hint);
     }
 
     private void setBpm(double value) {
@@ -182,6 +208,7 @@ public final class MainView {
             playButton.setText("▶  Tocar");
             playButton.getStyleClass().remove("playing");
             dots.forEach(d -> d.setOpacity(0.25));
+            rudimentStrip.dim();
             return;
         }
         try {
@@ -214,6 +241,7 @@ public final class MainView {
             @Override
             public void handle(long now) {
                 engine.pollPlayedBeats(MainView.this::flash);
+                engine.pollPlayedStrokes(rudimentStrip::highlight);
             }
         }.start();
     }

@@ -94,6 +94,32 @@
     -fx-fill: #f5a623;
 }
 
+.stroke-hand {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-font-family: "JetBrains Mono", "DejaVu Sans Mono", "Consolas", monospace;
+}
+
+.stroke-hand.right {
+    -fx-text-fill: #4fa3ff;
+}
+
+.stroke-hand.left {
+    -fx-text-fill: #f5a623;
+}
+
+.stroke-grace {
+    -fx-font-size: 12px;
+    -fx-text-fill: #8a90a0;
+    -fx-font-family: "JetBrains Mono", "DejaVu Sans Mono", "Consolas", monospace;
+}
+
+.stroke-accent {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffffff;
+}
+
 .slider .track {
     -fx-background-color: #2a2e38;
 }
